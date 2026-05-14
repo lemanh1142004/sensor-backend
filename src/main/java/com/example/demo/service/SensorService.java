@@ -98,17 +98,16 @@ public class SensorService {
     }
 }
     private String calculateDangerLevel(SensorMessage msg) {
-        // boolean unsafe = Boolean.FALSE.equals(msg.getIsSafe());
-        // boolean highGas = msg.getGas() != null && msg.getGas() >= 1000;
-        // boolean highSmoke = msg.getSmoke() != null && msg.getSmoke() >= 1000;
-        // boolean highTemp = msg.getTemperature() != null && msg.getTemperature() >= 50;
+        boolean unsafe = Boolean.FALSE.equals(msg.getIsSafe());
+        boolean highGas = msg.getGas() != null && msg.getGas() >= 1000;
+        boolean highSmoke = msg.getSmoke() != null && msg.getSmoke() >= 1000;
+        boolean highTemp = msg.getTemperature() != null && msg.getTemperature() >= 50;
 
-        // if (highTemp || highGas || highSmoke || unsafe) {
-        //     return "DANGER";
-        // }
+        if (highTemp || highGas || highSmoke || unsafe) {
+            return "DANGER";
+        }
 
-        // return "SAFE";
-           return "DANGER";
+        return "SAFE";
     }
 
     private void saveAlert(SensorData data, String dangerLevel) {

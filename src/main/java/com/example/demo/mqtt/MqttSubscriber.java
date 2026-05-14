@@ -38,15 +38,21 @@ public class MqttSubscriber {
     }
 
     @PostConstruct
+    
     public void connect() {
         try {
-            MqttClient client = new MqttClient(broker, clientId);
-
+MqttClient client = new MqttClient(
+        broker,
+        clientId + "-" + System.currentTimeMillis()
+);
             MqttConnectOptions options = new MqttConnectOptions();
             options.setUserName(username);
             options.setPassword(password.toCharArray());
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
+            options.setConnectionTimeout(30);
+            options.setKeepAliveInterval(60);
+            options.setAutomaticReconnect(true);
 
             client.connect(options);
 
