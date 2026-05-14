@@ -38,9 +38,11 @@ public class MqttSubscriber {
     }
 
     @PostConstruct
-    
     public void connect() {
         try {
+            System.out.println("=== START MQTT ===");
+        System.out.println("Broker: " + broker);
+        System.out.println("Topic: " + telemetryTopic);
 MqttClient client = new MqttClient(
         broker,
         clientId + "-" + System.currentTimeMillis()
@@ -75,8 +77,9 @@ MqttClient client = new MqttClient(
             System.out.println("MQTT connected.");
             System.out.println("Listening topic: " + telemetryTopic);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        }  catch (Exception e) {
+    System.out.println("=== MQTT FAIL ===");
+    e.printStackTrace();
+}
     }
 }
