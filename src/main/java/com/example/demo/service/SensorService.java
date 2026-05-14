@@ -31,36 +31,44 @@ public class SensorService {
         this.twilioCallService = twilioCallService;
     }
 
-    public SensorData saveFromMqtt(SensorMessage msg) {
-        String dangerLevel = calculateDangerLevel(msg);
+public SensorData saveFromMqtt(SensorMessage msg) {
+    String deviceId = msg.getDeviceId() != null ? msg.getDeviceId() : "esp32_01";
+    String dangerLevel = calculateDangerLevel(msg);
 
-        SensorData data = new SensorData();
+    // lấy dòng cũ
+    SensorData data = sensorRepository.findTopByDeviceIdOrderByCreatedAtDesc(deviceId);
 
-        data.setDeviceId(msg.getDeviceId() != null ? msg.getDeviceId() : "esp32_01");
-        data.setTemperature(msg.getTemperature());
-        data.setHumidity(msg.getHumidity());
-        data.setGas(msg.getGas());
-        data.setSmoke(msg.getSmoke());
-
-        data.setIsSafe(msg.getIsSafe());
-        data.setManualMode(defaultFalse(msg.getManualMode()));
-        data.setFan(defaultFalse(msg.getFan()));
-        data.setBuzzer(defaultFalse(msg.getBuzzer()));
-        data.setLedRed(defaultFalse(msg.getLedRed()));
-        data.setActiveAlerts(msg.getActiveAlerts() != null ? msg.getActiveAlerts() : 0);
-
-        data.setDangerLevel(dangerLevel);
-
-        SensorData saved = sensorRepository.save(data);
-
-        if (!"SAFE".equals(dangerLevel)) {
-            saveAlert(saved, dangerLevel);
-        }
-
-        handleEmergencyCall(dangerLevel);
-
-        return saved;
+    // nếu chưa có thì tạo mới
+    if (data == null) {
+        data = new SensorData();
+        data.setDeviceId(deviceId);
     }
+
+    // cập nhật dữ liệu mới
+    data.setTemperature(msg.getTemperature());
+    data.setHumidity(msg.getHumidity());
+    data.setGas(msg.getGas());
+    data.setSmoke(msg.getSmoke());
+
+    data.setIsSafe(msg.getIsSafe());
+    data.setManualMode(defaultFalse(msg.getManualMode()));
+    data.setFan(defaultFalse(msg.getFan()));
+    data.setBuzzer(defaultFalse(msg.getBuzzer()));
+    data.setLedRed(defaultFalse(msg.getLedRed()));
+    data.setActiveAlerts(msg.getActiveAlerts() != null ? msg.getActiveAlerts() : 0);
+
+    data.setDangerLevel(dangerLevel);
+
+    SensorData saved = sensorRepository.save(data);
+
+    if (!"SAFE".equals(dangerLevel)) {
+        saveAlert(saved, dangerLevel);
+    }
+
+    handleEmergencyCall(dangerLevel);
+
+    return saved;
+}
 
    private void handleEmergencyCall(String dangerLevel) {
     long now = System.currentTimeMillis();
