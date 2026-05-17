@@ -28,12 +28,12 @@ public class SensorController {
         this.historyRepository = historyRepository;
     }
 
-    @GetMapping("/latest/{deviceId}")
+@GetMapping(value = "/latest/{deviceId}", produces = "application/json")
     public SensorData latest(@PathVariable String deviceId) {
         return sensorRepository.findTopByDeviceIdOrderByCreatedAtDesc(deviceId);
     }
 
-    @GetMapping("/history/{deviceId}")
+@GetMapping(value = "/history/{deviceId}", produces = "application/json")
     public List<SensorDataHistory> history(@PathVariable String deviceId) {
         return historyRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
     }
