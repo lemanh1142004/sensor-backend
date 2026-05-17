@@ -15,7 +15,9 @@ public class SensorHistoryService {
 
     private final SensorDataRepository sensorDataRepository;
     private final SensorDataHistoryRepository historyRepository;
-
+public List<SensorDataHistory> getHistory(String deviceId) {
+    return historyRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
+}
     public SensorHistoryService(
             SensorDataRepository sensorDataRepository,
             SensorDataHistoryRepository historyRepository) {
