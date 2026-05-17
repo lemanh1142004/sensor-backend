@@ -9,5 +9,4 @@ import com.example.demo.entity.SensorDataHistory;
 public interface SensorDataHistoryRepository extends JpaRepository<SensorDataHistory, Long> {
 
     List<SensorDataHistory> findTop50ByDeviceIdOrderByCreatedAtDesc(String deviceId);
-
 }
