@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.entity.SensorData;
+import com.example.demo.entity.SensorDataHistory;
+import com.example.demo.repository.SensorDataHistoryRepository;
 import com.example.demo.repository.SensorDataRepository;
 
 @RestController
@@ -17,9 +19,13 @@ import com.example.demo.repository.SensorDataRepository;
 public class SensorController {
 
     private final SensorDataRepository sensorRepository;
+    private final SensorDataHistoryRepository historyRepository;
 
-    public SensorController(SensorDataRepository sensorRepository) {
+    public SensorController(
+            SensorDataRepository sensorRepository,
+            SensorDataHistoryRepository historyRepository) {
         this.sensorRepository = sensorRepository;
+        this.historyRepository = historyRepository;
     }
 
     @GetMapping("/latest/{deviceId}")
@@ -28,7 +34,7 @@ public class SensorController {
     }
 
     @GetMapping("/history/{deviceId}")
-    public List<SensorData> history(@PathVariable String deviceId) {
-        return sensorRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
+    public List<SensorDataHistory> history(@PathVariable String deviceId) {
+        return historyRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
     }
 }
