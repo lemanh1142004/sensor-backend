@@ -18,94 +18,97 @@ public class SensorService {
     private Long dangerStartTime = null;
     private Long lastCallTime = null;
 
-    private static final long CALL_INTERVAL_MS = 60000;    // 1 phút
-    private static final long DANGER_CONFIRM_MS = 30000; // 30 giây
+    private static final long CALL_INTERVAL_MS = 60000;
+    private static final long DANGER_CONFIRM_MS = 30000;
 
     public SensorService(
             SensorDataRepository sensorRepository,
             AlertRepository alertRepository,
-            TwilioCallService twilioCallService
-    ) {
+            TwilioCallService twilioCallService) {
         this.sensorRepository = sensorRepository;
         this.alertRepository = alertRepository;
         this.twilioCallService = twilioCallService;
     }
 
-public SensorData saveFromMqtt(SensorMessage msg) {
-    String deviceId = msg.getDeviceId() != null ? msg.getDeviceId() : "esp32_01";
-    String dangerLevel = calculateDangerLevel(msg);
+    public SensorData saveFromMqtt(SensorMessage msg) {
 
-    // lấy dòng cũ
-    SensorData data = sensorRepository.findTopByDeviceIdOrderByCreatedAtDesc(deviceId);
+        String deviceId = msg.getDeviceId() != null ? msg.getDeviceId() : "esp32_01";
+        String dangerLevel = calculateDangerLevel(msg);
 
-    // nếu chưa có thì tạo mới
-    if (data == null) {
-        data = new SensorData();
-        data.setDeviceId(deviceId);
-    }
+        // chỉ lấy 1 bản ghi realtime hiện tại
+        SensorData data = sensorRepository.findTopByDeviceIdOrderByCreatedAtDesc(deviceId);
 
-    // cập nhật dữ liệu mới
-    data.setTemperature(msg.getTemperature());
-    data.setHumidity(msg.getHumidity());
-    data.setGas(msg.getGas());
-    data.setSmoke(msg.getSmoke());
-
-    data.setIsSafe(msg.getIsSafe());
-    data.setManualMode(defaultFalse(msg.getManualMode()));
-    data.setFan(defaultFalse(msg.getFan()));
-    data.setBuzzer(defaultFalse(msg.getBuzzer()));
-    data.setLedRed(defaultFalse(msg.getLedRed()));
-    data.setActiveAlerts(msg.getActiveAlerts() != null ? msg.getActiveAlerts() : 0);
-
-    data.setDangerLevel(dangerLevel);
-
-    SensorData saved = sensorRepository.save(data);
-
-    if (!"SAFE".equals(dangerLevel)) {
-        saveAlert(saved, dangerLevel);
-    }
-
-    handleEmergencyCall(dangerLevel);
-
-    return saved;
-}
-
-   private void handleEmergencyCall(String dangerLevel) {
-    long now = System.currentTimeMillis();
-
-    if ("DANGER".equals(dangerLevel)) {
-
-        if (dangerStartTime == null) {
-            dangerStartTime = now;
-            System.out.println("Bắt đầu trạng thái nguy hiểm...");
+        if (data == null) {
+            data = new SensorData();
+            data.setDeviceId(deviceId);
         }
 
-        long dangerDuration = now - dangerStartTime;
+        // cập nhật dữ liệu mới
+        data.setTemperature(msg.getTemperature());
+        data.setHumidity(msg.getHumidity());
+        data.setGas(msg.getGas());
+        data.setSmoke(msg.getSmoke());
 
-        boolean dangerConfirmed = dangerDuration >= DANGER_CONFIRM_MS;
-        boolean canCallNow = lastCallTime == null || now - lastCallTime >= CALL_INTERVAL_MS;
-        boolean userAnswered = twilioCallService.isUserAnswered();
+        data.setIsSafe(msg.getIsSafe());
+        data.setManualMode(defaultFalse(msg.getManualMode()));
+        data.setFan(defaultFalse(msg.getFan()));
+        data.setBuzzer(defaultFalse(msg.getBuzzer()));
+        data.setLedRed(defaultFalse(msg.getLedRed()));
 
-        if (dangerConfirmed && canCallNow && !userAnswered) {
-            try {
-                System.out.println("Nguy hiểm >= 30 giây → gọi điện cảnh báo...");
-                twilioCallService.callEmergency();
-                lastCallTime = now;
-            } catch (Exception e) {
-                System.out.println("Lỗi khi gọi Twilio: " + e.getMessage());
+        data.setActiveAlerts(msg.getActiveAlerts() != null ? msg.getActiveAlerts() : 0);
+        data.setDangerLevel(dangerLevel);
+
+        System.out.println("MQTT UPDATE => Temp: " + msg.getTemperature()
+                + " | Hum: " + msg.getHumidity());
+
+        SensorData saved = sensorRepository.save(data);
+
+        if (!"SAFE".equals(dangerLevel)) {
+            saveAlert(saved, dangerLevel);
+        }
+
+        handleEmergencyCall(dangerLevel);
+
+        return saved;
+    }
+
+    private void handleEmergencyCall(String dangerLevel) {
+        long now = System.currentTimeMillis();
+
+        if ("DANGER".equals(dangerLevel)) {
+
+            if (dangerStartTime == null) {
+                dangerStartTime = now;
+                System.out.println("Bắt đầu trạng thái nguy hiểm...");
             }
+
+            long dangerDuration = now - dangerStartTime;
+
+            boolean dangerConfirmed = dangerDuration >= DANGER_CONFIRM_MS;
+            boolean canCallNow = lastCallTime == null || now - lastCallTime >= CALL_INTERVAL_MS;
+            boolean userAnswered = twilioCallService.isUserAnswered();
+
+            if (dangerConfirmed && canCallNow && !userAnswered) {
+                try {
+                    System.out.println("Nguy hiểm >= 30 giây → gọi điện...");
+                    twilioCallService.callEmergency();
+                    lastCallTime = now;
+                } catch (Exception e) {
+                    System.out.println("Lỗi Twilio: " + e.getMessage());
+                }
+            }
+
+        } else {
+            dangerStartTime = null;
+            lastCallTime = null;
+            twilioCallService.resetAnswered();
+
+            System.out.println("SAFE → reset");
         }
-
-    } else {
-        // 🔥 SAFE → reset ngay lập tức
-        dangerStartTime = null;
-        lastCallTime = null;
-        twilioCallService.resetAnswered();
-
-        System.out.println("Trạng thái an toàn → reset hệ thống.");
     }
-}
+
     private String calculateDangerLevel(SensorMessage msg) {
+
         boolean unsafe = Boolean.FALSE.equals(msg.getIsSafe());
         boolean highGas = msg.getGas() != null && msg.getGas() >= 1000;
         boolean highSmoke = msg.getSmoke() != null && msg.getSmoke() >= 1000;
@@ -119,12 +122,13 @@ public SensorData saveFromMqtt(SensorMessage msg) {
     }
 
     private void saveAlert(SensorData data, String dangerLevel) {
+
         Alert alert = new Alert();
 
         alert.setDeviceId(data.getDeviceId());
         alert.setDangerLevel(dangerLevel);
         alert.setAlertType("FIRE_WARNING");
-        alert.setMessage("Cảnh báo! Dữ liệu cảm biến vượt ngưỡng an toàn.");
+        alert.setMessage("Cảnh báo! Dữ liệu vượt ngưỡng.");
 
         alertRepository.save(alert);
     }

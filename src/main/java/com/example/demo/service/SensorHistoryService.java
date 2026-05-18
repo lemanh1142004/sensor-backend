@@ -15,14 +15,16 @@ public class SensorHistoryService {
 
     private final SensorDataRepository sensorDataRepository;
     private final SensorDataHistoryRepository historyRepository;
-public List<SensorDataHistory> getHistory(String deviceId) {
-    return historyRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
-}
+
     public SensorHistoryService(
             SensorDataRepository sensorDataRepository,
             SensorDataHistoryRepository historyRepository) {
         this.sensorDataRepository = sensorDataRepository;
         this.historyRepository = historyRepository;
+    }
+
+    public List<SensorDataHistory> getHistory(String deviceId) {
+        return historyRepository.findTop50ByDeviceIdOrderByCreatedAtDesc(deviceId);
     }
 
     @Scheduled(fixedRate = 60000)
@@ -31,6 +33,8 @@ public List<SensorDataHistory> getHistory(String deviceId) {
         List<SensorData> currentData = sensorDataRepository.findAll();
 
         for (SensorData data : currentData) {
+
+            if (data == null) continue;
 
             SensorDataHistory history = new SensorDataHistory();
 
