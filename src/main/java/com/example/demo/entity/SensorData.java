@@ -16,7 +16,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "sensor_data")
-@JsonIgnoreProperties(ignoreUnknown = true) // ✨ Chống sập luồng nếu ESP32 gửi thêm trường lạ
+@JsonIgnoreProperties(ignoreUnknown = true) // ✨ QUAN TRỌNG: Bỏ qua trường "smoke" và "flame_detected" bị thiếu từ ESP32
 public class SensorData {
 
     @Id
@@ -25,23 +25,29 @@ public class SensorData {
 
     private String deviceId;
 
-    @JsonProperty("temp") // ✨ Ép kiểu: Hứng "temp" từ JSON nạp vào biến temperature
+    @JsonProperty("temp") 
     private Double temperature;
 
-    @JsonProperty("hum")  // ✨ Ép kiểu: Hứng "hum" từ JSON nạp vào biến humidity
+    @JsonProperty("hum")  
     private Double humidity;
 
     private Double gas;
-    private Double smoke;
+    
+    private Double smoke; // Tự động nhận null/0 nếu ESP32 không gửi
 
-    @JsonProperty("isSafe") // Thêm cho chắc chắn đồng bộ logic
-    private Boolean isSafe;
+    private Boolean flameDetected; // Tự động nhận null/0 nếu ESP32 không gửi
 
-    private Boolean manualMode;
     private Boolean fan;
     private Boolean buzzer;
     
+    @JsonProperty("ledRed") // ✨ Ép kiểu chữ hoa "ledRed" từ JSON vào led_red của DB
     private Boolean ledRed;
+
+    @JsonProperty("manualMode") // ✨ Ép kiểu chữ hoa "manualMode" từ JSON vào manual_mode của DB
+    private Boolean manualMode;
+
+    @JsonProperty("isSafe") 
+    private Boolean isSafe;
 
     private Integer activeAlerts;
     private String dangerLevel;
