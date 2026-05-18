@@ -2,7 +2,7 @@ package com.example.demo.entity;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column; // Bổ sung import này
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,10 +21,14 @@ public class User {
     private String username;
     private String password;
 
-    @Column(name = "full_name") // Ép buộc Hibernate ánh xạ đúng tên cột có dấu gạch dưới trong Postgres Neon
+    @Column(name = "full_name")
     private String fullName;
     
     private String role;
+    
+    // ✨ THÊM TRƯỜNG STATUS (ACTIVE / LOCKED)
+    private String status = "ACTIVE"; 
+    
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -33,12 +37,6 @@ public class User {
     }
 
     public User() {}
-    public User(String username, String password, String fullName, String role) {
-        this.username = username;
-        this.password = password;
-        this.fullName = fullName;
-        this.role = role;
-    }
 
     // --- Getters and Setters ---
     public Long getId() { return id; }
@@ -46,6 +44,7 @@ public class User {
     public String getPassword() { return password; }
     public String getFullName() { return fullName; }
     public String getRole() { return role; }
+    public String getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setId(Long id) { this.id = id; }
@@ -53,5 +52,6 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public void setRole(String role) { this.role = role; }
+    public void setStatus(String status) { this.status = status; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

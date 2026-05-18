@@ -1,7 +1,9 @@
 package com.example.demo.entity;
 
-
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +16,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "sensor_data")
+@JsonIgnoreProperties(ignoreUnknown = true) // ✨ Chống sập luồng nếu ESP32 gửi thêm trường lạ
 public class SensorData {
 
     @Id
@@ -22,15 +25,22 @@ public class SensorData {
 
     private String deviceId;
 
+    @JsonProperty("temp") // ✨ Ép kiểu: Hứng "temp" từ JSON nạp vào biến temperature
     private Double temperature;
+
+    @JsonProperty("hum")  // ✨ Ép kiểu: Hứng "hum" từ JSON nạp vào biến humidity
     private Double humidity;
+
     private Double gas;
     private Double smoke;
 
+    @JsonProperty("isSafe") // Thêm cho chắc chắn đồng bộ logic
     private Boolean isSafe;
+
     private Boolean manualMode;
     private Boolean fan;
     private Boolean buzzer;
+    
     private Boolean ledRed;
 
     private Integer activeAlerts;
